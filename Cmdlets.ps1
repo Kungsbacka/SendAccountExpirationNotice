@@ -1,6 +1,6 @@
 ﻿Import-Module -Name 'ActiveDirectory'
 
-function Get-AccountsWithPasswordsAboutToExpire
+function Get-AccountsWithPasswordAboutToExpire
 {
     param
     (
@@ -31,7 +31,7 @@ function Get-AccountsWithPasswordsAboutToExpire
             $start = (Get-Date).AddDays(-$passwordPolicy.MaxPasswordAge.Days).ToFileTimeUtc()
             $end = (Get-Date).AddDays($DaysBeforeExpiration - $passwordPolicy.MaxPasswordAge.Days + 1).Date.ToFileTimeUtc()
             $params = @{
-                Properties = @('msDS-UserPasswordExpiryTimeComputed')
+                Properties = @('msDS-UserPasswordExpiryTimeComputed', 'DisplayName')
                 SearchBase = $SearchBase
                 Filter = {
                     Enabled -eq $true
@@ -48,7 +48,8 @@ function Get-AccountsWithPasswordsAboutToExpire
         {
             $expirationDate = [DateTime]::FromFileTimeUtc($user.'msDS-UserPasswordExpiryTimeComputed').ToLocalTime()
             $out = [pscustomobject]@{
-                Name = $user.GivenName
+                GivenName = $user.GivenName
+                DisplayName = $user.DisplayName
                 EmailAddress = $user.UserPrincipalName
                 SamAccountName = $user.SamAccountName
                 ExpirationDate = $expirationDate
@@ -111,16 +112,72 @@ function Send-PasswordExpirationNotice
             $mail = New-Object -TypeName 'System.Net.Mail.MailMessage'
             $mail.BodyEncoding = [System.Text.Encoding]::UTF8
             $mail.SubjectEncoding = [System.Text.Encoding]::UTF8
+            $mail.IsBodyHtml = $true
             $mail.From = $From
             $mail.To.Add($_.EmailAddress)
             $mail.Subject = $Subject
-            $mail.Body = $EmailTemplate.Replace('{NAME}', $_.Name).Replace('{SAM}', $_.SamAccountName).Replace('{DAYS}', $msg)
+            $mail.Body = $EmailTemplate.Replace('{NAME}', $_.GivenName).Replace('{SAM}', $_.SamAccountName).Replace('{DAYS}', $msg)
             $smtpClient.Send($mail)
             $mail.Dispose()
         }
     }
     end
     {
+        $smtpClient.Dispose()
+    }
+}
+
+function Send-AdminReport
+{
+    param
+    (
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [object[]]
+        $InputObject,
+        [Parameter(Mandatory=$true)]
+        [string]
+        $EmailTemplate,
+        [Parameter(Mandatory=$true)]
+        [string]
+        $From,
+        [Parameter(Mandatory=$true)]
+        [string]
+        $To,
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Subject,
+        [Parameter(Mandatory=$true)]
+        [string]
+        $SmtpServer
+    )
+    begin
+    {
+        $stringBuilder = New-Object 'System.Text.StringBuilder'
+    }
+    process
+    {
+        foreach ($item in $InputObject)
+        {
+            [void]$stringBuilder.AppendLine("<tr><td>$($item.DisplayName)</td><td>$($item.EmailAddress)</td><td>$($item.ExpirationDate.ToString('yyyy-MM-dd'))</td><td>$($_.DaysBeforeExpiration)</td></tr>")
+        }
+    }
+    end
+    {
+        # The reason for not using Send-MailMessage is that there is no way to avoid authentication and
+        # I have not found a way to get a gMSA to authenticate successfully against an Exchange connector.
+        $smtpClient = New-Object -TypeName 'System.Net.Mail.SmtpClient'
+        $smtpClient.UseDefaultCredentials = $false
+        $smtpClient.Host = $SmtpServer
+        $mail = New-Object -TypeName 'System.Net.Mail.MailMessage'
+        $mail.BodyEncoding = [System.Text.Encoding]::UTF8
+        $mail.SubjectEncoding = [System.Text.Encoding]::UTF8
+        $mail.IsBodyHtml = $true
+        $mail.From = $From
+        $mail.To.Add($To)
+        $mail.Subject = $Subject
+        $mail.Body = $EmailTemplate.Replace('{TABLEROWS}', $stringBuilder.ToString())
+        $smtpClient.Send($mail)
+        $mail.Dispose()
         $smtpClient.Dispose()
     }
 }

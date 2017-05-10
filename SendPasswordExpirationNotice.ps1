@@ -6,7 +6,7 @@ $params = @{
     DaysBefore = $Script:Config.DaysBefore
     SearchBase = $Script:Config.SearchBase
 }
-$accounts = Get-AccountsWithPasswordsAboutToExpire @params
+$accounts = Get-AccountsWithPasswordAboutToExpire @params
 
 $params = @{
     EmailTemplate = $Script:Config.EmailTemplate
@@ -15,3 +15,12 @@ $params = @{
     SmtpServer = $Script:Config.SmtpServer
 }
 $accounts | Send-PasswordExpirationNotice @params
+
+$params = @{
+    EmailTemplate = $Script:Config.AdminReportTemplate
+    From = $Script:Config.From
+    To = $Script:Config.AdminReportRecipient
+    Subject = $Script:Config.AdminReportSubject
+    SmtpServer = $Script:Config.SmtpServer
+}
+$accounts | Send-AdminReport @params
