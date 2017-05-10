@@ -1,4 +1,4 @@
-$Script:Config = @{
+﻿$Script:Config = @{
     # Where to base the search
     SearchBase = 'DC=example,DC=com'
     # Find users where the password is about to expire in the next n days
