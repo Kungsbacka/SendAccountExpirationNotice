@@ -109,7 +109,6 @@ function Send-PasswordExpirationNotice
             {
                 continue
             }
-            $x = $EmailTemplate.Replace('{NAME}', $_.GivenName).Replace('{SAM}', $_.SamAccountName).Replace('{DAYS}', $msg).Replace('{DATE}', $date)
             $mail = New-Object -TypeName 'System.Net.Mail.MailMessage'
             $mail.BodyEncoding = [System.Text.Encoding]::UTF8
             $mail.SubjectEncoding = [System.Text.Encoding]::UTF8
