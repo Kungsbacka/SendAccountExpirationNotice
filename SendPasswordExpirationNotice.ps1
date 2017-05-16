@@ -23,4 +23,5 @@ $params = @{
     Subject = $Script:Config.AdminReportSubject
     SmtpServer = $Script:Config.SmtpServer
 }
-$accounts | Send-AdminReport @params
+# Enable admin report to get a full report of all users receiving a notice
+# $accounts | Send-AdminReport @params
