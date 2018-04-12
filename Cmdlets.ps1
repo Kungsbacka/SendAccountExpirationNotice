@@ -4,14 +4,14 @@ function Get-AccountsWithPasswordAboutToExpire
 {
     param
     (
-        [Parameter(Mandatory=$true,Position=0,ParameterSetName='Search')]
+        [Parameter(Mandatory=$true)]
         [ValidateRange(1,10)]
         [int]
         $DaysBeforeExpiration,
-        [Parameter(Mandatory=$true,Position=1,ParameterSetName='Search')]
+        [Parameter(Mandatory=$true,ParameterSetName='Search')]
         [string]
         $SearchBase,
-        [Parameter(Mandatory=$true,Position=0,ParameterSetName='SingleUser')]
+        [Parameter(Mandatory=$true,ParameterSetName='SingleUser')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Identity
