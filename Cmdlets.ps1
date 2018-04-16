@@ -14,7 +14,10 @@ function Get-AccountsWithPasswordAboutToExpire
         [Parameter(Mandatory=$true,ParameterSetName='SingleUser')]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Identity
+        $Identity,
+        [Parameter(Mandatory=$false,ParameterSetName='Search')]
+        [string[]]
+        $MailDomain
     )
     begin
     {
@@ -30,17 +33,25 @@ function Get-AccountsWithPasswordAboutToExpire
             $passwordPolicy = Get-ADDefaultDomainPasswordPolicy
             $start = (Get-Date).AddDays(-$passwordPolicy.MaxPasswordAge.Days).ToFileTimeUtc()
             $end = (Get-Date).AddDays($DaysBeforeExpiration - $passwordPolicy.MaxPasswordAge.Days + 1).Date.ToFileTimeUtc()
+            $filter = "Enabled -eq 'true'" +
+                " -and PasswordNeverExpires -eq 'false'" +
+                " -and homeMDB -like '*'" +
+                " -and mailNickName -like '*'" +
+                " -and pwdLastSet -ge $start" +
+                " -and pwdLastSet -le $end"
+            $domainFilter = ''
+            foreach ($domain in $MailDomain)
+            {
+                $domainFilter += "mail -like '*@$domain' -or "
+            }
+            if ($domainFilter)
+            {
+                $filter += " -and ($($domainFilter.Substring(0, $domainFilter.Length - 5)))"
+            }
             $params = @{
-                Properties = @('msDS-UserPasswordExpiryTimeComputed', 'DisplayName')
+                Properties = @('msDS-UserPasswordExpiryTimeComputed','DisplayName','Mail')
                 SearchBase = $SearchBase
-                Filter = {
-                    Enabled -eq $true
-                    -and PasswordNeverExpires -eq $false
-                    -and homeMDB -like '*'
-                    -and mailNickName -like '*'
-                    -and pwdLastSet -ge $start
-                    -and pwdLastSet -le $end
-                }
+                Filter = $filter
             }
         }
         $users = Get-ADUser @params
@@ -50,7 +61,7 @@ function Get-AccountsWithPasswordAboutToExpire
             $out = [pscustomobject]@{
                 GivenName = $user.GivenName
                 DisplayName = $user.DisplayName
-                EmailAddress = $user.UserPrincipalName
+                EmailAddress = $user.Mail
                 SamAccountName = $user.SamAccountName
                 ExpirationDate = $expirationDate
                 DaysBeforeExpiration = ($expirationDate.Date - (Get-Date).Date).Days

@@ -3,6 +3,9 @@
     SearchBase = 'DC=example,DC=com'
     # Find users where the password is about to expire in the next n days
     DaysBefore = 10
+    # Array of mail domains that should be included in the search.
+    # If the array is empty, all mail domains are included.
+    MailDomains = @('example.com','example.net')
     # SMTP server used to relay message
     SmtpServer = 'smtp.example.com'
     # Mail from
