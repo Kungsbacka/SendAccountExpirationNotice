@@ -35,8 +35,7 @@ function Get-AccountsWithPasswordAboutToExpire
             $end = (Get-Date).AddDays($DaysBeforeExpiration - $passwordPolicy.MaxPasswordAge.Days + 1).Date.ToFileTimeUtc()
             $filter = "Enabled -eq 'true'" +
                 " -and PasswordNeverExpires -eq 'false'" +
-                " -and homeMDB -like '*'" +
-                " -and mailNickName -like '*'" +
+                " -and mail -like '*'" +
                 " -and pwdLastSet -ge $start" +
                 " -and pwdLastSet -le $end"
             $domainFilter = ''
