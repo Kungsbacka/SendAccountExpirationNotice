@@ -8,6 +8,7 @@ $params = @{
 }
 $accounts = Get-AccountsWithPasswordAboutToExpire @params
 
+
 $params = @{
     EmailTemplate = $Script:Config.EmailTemplate
     From = $Script:Config.From

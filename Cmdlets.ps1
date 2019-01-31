@@ -5,7 +5,7 @@ function Get-AccountsWithPasswordAboutToExpire
     param
     (
         [Parameter(Mandatory=$true)]
-        [ValidateRange(1,10)]
+        [ValidateRange(1,300)]
         [int]
         $DaysBeforeExpiration,
         [Parameter(Mandatory=$true,ParameterSetName='Search')]
@@ -24,7 +24,7 @@ function Get-AccountsWithPasswordAboutToExpire
         if ($PsCmdlet.ParameterSetName -eq 'SingleUser')
         {
             $params = @{
-                Properties = @('msDS-UserPasswordExpiryTimeComputed')
+                Properties = @('msDS-UserPasswordExpiryTimeComputed','DisplayName','Mail')
                 Identity = $Identity
             }
         }
@@ -102,16 +102,16 @@ function Send-PasswordExpirationNotice
     {
         foreach ($item in $InputObject)
         {
-            $date = $_.ExpirationDate.ToString('yyyy-MM-dd') + ' klockan ' + $_.ExpirationDate.ToString('HH:mm')
-            if ($_.DaysBeforeExpiration -gt 1)
+            $date = $item.ExpirationDate.ToString('yyyy-MM-dd') + ' klockan ' + $item.ExpirationDate.ToString('HH:mm')
+            if ($item.DaysBeforeExpiration -gt 1)
             {
-                $msg = "om $($_.DaysBeforeExpiration) dagar ($date)"
+                $msg = "om $($item.DaysBeforeExpiration) dagar ($date)"
             }
-            elseif ($_.DaysBeforeExpiration -eq 1)
+            elseif ($item.DaysBeforeExpiration -eq 1)
             {
                 $msg = "imorgon ($date)"
             }
-            elseif ($_.DaysBeforeExpiration -eq 0)
+            elseif ($item.DaysBeforeExpiration -eq 0)
             {
                 $msg = "idag ($date)"
             }
@@ -124,9 +124,9 @@ function Send-PasswordExpirationNotice
             $mail.SubjectEncoding = [System.Text.Encoding]::UTF8
             $mail.IsBodyHtml = $true
             $mail.From = $From
-            $mail.To.Add($_.EmailAddress)
+            $mail.To.Add($item.EmailAddress)
             $mail.Subject = $Subject
-            $mail.Body = $EmailTemplate.Replace('{NAME}', $_.GivenName).Replace('{SAM}', $_.SamAccountName).Replace('{DAYS}', $msg).Replace('{DATE}', $date)
+            $mail.Body = $EmailTemplate.Replace('{NAME}', $item.GivenName).Replace('{SAM}', $item.SamAccountName).Replace('{DAYS}', $msg).Replace('{DATE}', $date)
             $smtpClient.Send($mail)
             $mail.Dispose()
         }
@@ -168,7 +168,7 @@ function Send-AdminReport
     {
         foreach ($item in $InputObject)
         {
-            [void]$stringBuilder.AppendLine("<tr><td>$($item.DisplayName)</td><td>$($item.EmailAddress)</td><td>$($item.ExpirationDate.ToString('yyyy-MM-dd'))</td><td>$($_.DaysBeforeExpiration)</td></tr>")
+            [void]$stringBuilder.AppendLine("<tr><td>$($item.DisplayName)</td><td>$($item.EmailAddress)</td><td>$($item.ExpirationDate.ToString('yyyy-MM-dd'))</td><td>$($item.DaysBeforeExpiration)</td></tr>")
         }
     }
     end
