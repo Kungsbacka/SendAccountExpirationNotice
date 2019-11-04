@@ -5,7 +5,6 @@ function Get-AccountsWithPasswordAboutToExpire
     param
     (
         [Parameter(Mandatory=$true)]
-        [ValidateRange(1,300)]
         [int]
         $DaysBeforeExpiration,
         [Parameter(Mandatory=$true,ParameterSetName='Search')]
