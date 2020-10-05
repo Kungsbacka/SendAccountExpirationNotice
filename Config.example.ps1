@@ -1,59 +1,31 @@
 ﻿$Script:Config = @{
     # Where to base the search
     SearchBase = 'DC=example,DC=com'
-    # Find users where the password is about to expire in the next n days
-    DaysBefore = 10
-    # Array of mail domains that should be included in the search.
-    # If the array is empty, all mail domains are included.
-    MailDomains = @('example.com','example.net')
+    # Find users where the password is about to expire in the next n days.
+    # This is for the notice that is sent to individual users
+    IndividualDaysBeforeExpiration = 10
+    # Find users where the password is about to expire in the next n days.
+    # This is for the report that is sent to the managers
+    ManagerDaysBeforeExpiration = 14
+    # Array of UPN domains that should be included in the search. If the array
+    # is empty, all domains are included.
+    UpnDomains = @('contoso.com','anotherdomain.com')
     # SMTP server used to relay message
     SmtpServer = 'smtp.example.com'
-    # Mail from
+    # From address
     From = 'Admin <noreply@example.com>'
-    # Subject text
-    Subject = 'Lösenordsbyte'
-    # Email temlate. {NAME} = display name, {SAM} SAM account name, {DAYS} = days string (in Swedish)
-    EmailTemplate = @"
-<html>
-<head>
-<meta http-equiv=Content-Type content="text/html; charset=utf-8">
-</head>
-<body style="font-family:Calibri, Sans-serif; font-size:11pt; line-hight:120%;">
-<p>Hej {NAME},</p>
-
-<p>Ditt lösenord för {SAM} går ut {DAYS}.</p>
-
-<p>Vänliga hälsningar<br>
-Admin</p>
-</body>
-</html>
-"@
-    # Report recipient
-    AdminReportRecipient = 'Admin <admin@example.com>'
-    # Report subject
-    AdminReportSubject = 'Rapport'
-    # Email template. {TABLEROWS} = HTML table rows (four columns: Name/Email/Expiration date/Days left)
-    AdminReportTemplate = @"
-<html>
-<head>
-<meta http-equiv=Content-Type content="text/html; charset=utf-8">
-</head>
-<body style="font-family:Calibri, Sans-serif; font-size:11pt; line-hight:120%;">
-<style>
-table { color: #333; border-collapse: collapse; border-spacing: 0; }
-td, th { border: 1px solid transparent; height: 30px; }
-th { background: #DFDFDF; font-weight: bold; }
-td { background: #FAFAFA; text-align: center; }
-</style>
-<p>Hej,</p>
-<p>Följande användare har fått ett meddelande om lösenordsbyte:</p>
-<table>
-<tr><th>Namn</th><th>E-postadress</th><th>Datum</th><th>Dagar kvar</th></tr>
-{TABLEROWS}
-</table>
-<p>Hälsningar,<br>
-Admin</p>
-</body>
-</html>
-"@
+    # Subject text for the notice that is sent to individual users
+    IndividualSubject = 'Your account is about to expire'
+    # Email HTML template used for the notice that is sent to individual users.
+    # The following placeholders will be replaced in the template:
+    #   {NAME} => display name
+    #   {SAM} => SAM account name
+    #   {DAYS} => days string (currently in Swedish)
+    IndividualTemplate = "Individual.html"
+    # Email HTML temlate used for the report that is sent to the managers.
+    # The following placeholders will be replaced:
+    #   {TABLE} => table with accounts about to expire that report to the manager
+    ManagerTemplate = 'Manager.html'
+    # Subject text used for the report sent to the managers
+    ManagerSubject = 'Avslut av användarkonto'
 }
