@@ -1,6 +1,6 @@
 ﻿Import-Module -Name 'ActiveDirectory'
 . "$PSScriptRoot\Functions.ps1"
-. "$PSScriptRoot\Config.ps1"
+$Script:Config = . "$PSScriptRoot\Config.ps1"
 
 $template = Get-Content -Path "$PSScriptRoot\$($Script:Config.ManagerTemplate)" -Encoding UTF8 | Out-String
 
@@ -17,13 +17,17 @@ foreach ($domain in $Script:Config.UpnDomains) {
     Get-AccountAboutToExpire @params | ForEach-Object {$null = $accountsAboutToExpire.Add($_)}
 }
 
-$accountsAboutToExpire = $accountsAboutToExpire | % {$_.EmailAddress = $null; $_}
-
 # Create messages
 $accountsGroupedByManager = $accountsAboutToExpire | Group-Object 'ManagerEmailAddress' | Where-Object Name -ne ''
 $messages = New-Object -TypeName 'System.Collections.ArrayList'
+$params = @{
+    EmailTemplate = $template
+    From = $Script:Config.From
+    Subject = $Script:Config.ManagerSubject
+}
 foreach ($group in $accountsGroupedByManager) {
-    $group.Group | New-ManagerReportMessage -EmailTemplate $template -From $Script:Config.From -To $group.Name -Subject $Script:Config.ManagerSubject | ForEach-Object {
+    $params.To = $group.Name
+    $group.Group | New-ManagerReportMessage @params | ForEach-Object {
         $null = $messages.Add($_)
     }
 }

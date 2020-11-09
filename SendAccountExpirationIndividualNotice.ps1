@@ -1,6 +1,6 @@
 ﻿Import-Module -Name 'ActiveDirectory'
 . "$PSScriptRoot\Functions.ps1"
-. "$PSScriptRoot\Config.ps1"
+$Script:Config = . "$PSScriptRoot\Config.ps1"
 
 $template = Get-Content -Path "$PSScriptRoot\$($Script:Config.IndividualTemplate)" -Encoding UTF8 | Out-String
 
@@ -19,8 +19,15 @@ foreach ($domain in $Script:Config.UpnDomains) {
 }
 
 # Create messages
+$messages = New-Object -TypeName 'System.Collections.ArrayList'
+$params = @{
+    EmailTemplate = $template
+    From = $Script:Config.From
+    Subject = $Script:Config.IndividualSubject
+}
 foreach ($account in $accountsAboutToExpire) {
-    $messages = $account | New-AccountExpirationMessage -EmailTemplate $template -From $Script:Config.From -Subject $Script:Config.IndividualSubject
+    $message = $account | New-AccountExpirationMessage @params
+    $null = $messages.Add($message)
 }
 
 # Send messages

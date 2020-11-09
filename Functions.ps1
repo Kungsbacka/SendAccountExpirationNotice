@@ -250,3 +250,59 @@ function Send-AccountExpirationMessage
         $smtpClient.Dispose()
     }
 }
+
+function Send-ExamapleNotice
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Individual','Manager')]
+        [string]
+        $Type,
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Recipient,
+        [Parameter(Mandatory=$false)]
+        [string]
+        $RunOn,
+        [Parameter(Mandatory=$false)]
+        [PSCredential]
+        $Credential
+    )
+    begin {
+        $config = . "$PSScriptRoot\Config.ps1"
+        $accounts = @(
+            [pscustomobject]@{GivenName='Anna';DisplayName='Anna Andersson';EmailAddress='anna.andersson@kungsbacka.se';ManagerEmailAddress='lotta.larsson@kungsbacka.se';SamAccountName='annand';ExpirationDate=(Get-Date).AddDays(5);DaysBeforeExpiration=5}
+            [pscustomobject]@{GivenName='Pelle';DisplayName='Pelle Persson';EmailAddress='pelle.persson@kungsbacka.se';ManagerEmailAddress='lotta.larsson@kungsbacka.se';SamAccountName='pelper';ExpirationDate=(Get-Date).AddDays(8);DaysBeforeExpiration=8}
+            [pscustomobject]@{GivenName='Stina';DisplayName='Stina Svensson';EmailAddress='stina.svennson@kungsbacka.se';ManagerEmailAddress='lotta.larsson@kungsbacka.se';SamAccountName='stisve';ExpirationDate=(Get-Date).AddDays(7);DaysBeforeExpiration=7}
+        )
+        if ($Type -eq 'Individual') {
+            $params = @{
+                EmailTemplate = (Get-Content -Path "$PSScriptRoot\$($config.IndividualTemplate)" -Encoding UTF8 | Out-String)
+                From = $config.From
+                Subject = $config.IndividualSubject
+            }
+            $messages = $accounts[0] | New-AccountExpirationMessage @params
+        }
+        else {
+            $params = @{
+                EmailTemplate = (Get-Content -Path "$PSScriptRoot\$($config.ManagerTemplate)" -Encoding UTF8 | Out-String)
+                From = $config.From
+                To = $Recipient
+                Subject = $config.ManagerSubject
+            }
+            $messages = $accounts | New-ManagerReportMessage @params
+        }
+        $params = @{
+            SmtpServer = $config.SmtpServer
+            SendAllMessagesTo = $Recipient
+        }
+        if ($RunOn) {
+            $params.RunOn = $RunOn
+        }
+        if ($Credential) {
+            $params.Credential = $Credential
+        }
+        $messages | Send-AccountExpirationMessage @params
+    }
+}
