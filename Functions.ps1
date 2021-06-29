@@ -34,7 +34,7 @@ function Get-AccountAboutToExpire
         {
             $start = [DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss')
             $end = [DateTime]::Now.AddDays($DaysBeforeExpiration).ToString('yyyy-MM-dd HH:mm:ss')
-            $filter = "Enabled -eq 'true' -and AccountExpirationDate -ge '$start' -and AccountExpirationDate -le '$end'"
+            $filter = "GidNumber -notlike '*' -and Enabled -eq 'true' -and AccountExpirationDate -ge '$start' -and AccountExpirationDate -le '$end'"
             $domainFilter = ''
             foreach ($domain in $UpnDomain)
             {
@@ -63,7 +63,7 @@ function Get-AccountAboutToExpire
                 ManagerEmailAddress = $null
                 SamAccountName = $user.SamAccountName
                 ExpirationDate = $user.AccountExpirationDate
-                DaysBeforeExpiration = ($user.AccountExpirationDate - (Get-Date).Date).Days - 1
+                DaysBeforeExpiration = ($user.AccountExpirationDate - (Get-Date).Date).Days
             }
             if ($user.Mail -and $user.MailNickname -and $user.MsExchRecipientTypeDetails) {
                 $out.EmailAddress = $user.Mail
